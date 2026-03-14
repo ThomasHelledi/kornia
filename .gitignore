@@ -33,3 +33,4 @@ weights/
 .uv_cache/
 
 .python-version
+__pycache__/
