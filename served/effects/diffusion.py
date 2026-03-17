@@ -112,7 +112,8 @@ class DiffusionEffect:
         # Resolve 'auto' BEFORE guard check — otherwise 'auto' != 'sdxl-turbo' causes reload every frame
         if model_name == 'auto':
             if self.device.type == 'cuda':
-                vram_gb = torch.cuda.get_device_properties(0).total_mem / 1e9
+                props = torch.cuda.get_device_properties(0)
+                vram_gb = getattr(props, 'total_memory', getattr(props, 'total_mem', 0)) / 1e9
                 if vram_gb >= 10:
                     model_name = 'sdxl-turbo'
                 else:
