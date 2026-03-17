@@ -114,7 +114,9 @@ class DiffusionEffect:
             if self.device.type == 'cuda':
                 props = torch.cuda.get_device_properties(0)
                 vram_gb = getattr(props, 'total_memory', getattr(props, 'total_mem', 0)) / 1e9
-                if vram_gb >= 10:
+                # SDXL-Turbo VAE needs fp32 upcast → 8GB VRAM → OOM/slow
+                # SD-Turbo: 3GB VRAM, fast on 8GB cards (RTX 2070S etc.)
+                if vram_gb >= 12:
                     model_name = 'sdxl-turbo'
                 else:
                     model_name = 'sd-turbo'
