@@ -163,15 +163,19 @@ class DiffusionEffect:
                 if hasattr(self.pipe, 'enable_vae_slicing'):
                     self.pipe.enable_vae_slicing()
 
-                # torch.compile for 20-30% speedup (warmup on first frame)
-                try:
-                    self.pipe.unet = torch.compile(
-                        self.pipe.unet, mode='reduce-overhead', fullgraph=True
-                    )
-                    self._compiled = True
-                    sys.stderr.write('kornia-server: torch.compile enabled (reduce-overhead)\n')
-                except Exception as e:
-                    sys.stderr.write(f'kornia-server: torch.compile skipped: {e}\n')
+                # torch.compile for 20-30% speedup (requires Triton — Linux only)
+                import platform
+                if platform.system() != 'Windows':
+                    try:
+                        self.pipe.unet = torch.compile(
+                            self.pipe.unet, mode='reduce-overhead', fullgraph=True
+                        )
+                        self._compiled = True
+                        sys.stderr.write('kornia-server: torch.compile enabled (reduce-overhead)\n')
+                    except Exception as e:
+                        sys.stderr.write(f'kornia-server: torch.compile skipped: {e}\n')
+                else:
+                    sys.stderr.write('kornia-server: torch.compile skipped (Windows — no Triton)\n')
 
             # MPS optimizations
             elif self.device.type == 'mps':
