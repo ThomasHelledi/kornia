@@ -109,9 +109,7 @@ class DiffusionEffect:
 
     def _load_model(self, model_name='auto'):
         """Lazy-load diffusion pipeline on first frame."""
-        if self.pipe is not None and self.model_name == model_name:
-            return
-
+        # Resolve 'auto' BEFORE guard check — otherwise 'auto' != 'sdxl-turbo' causes reload every frame
         if model_name == 'auto':
             if self.device.type == 'cuda':
                 vram_gb = torch.cuda.get_device_properties(0).total_mem / 1e9
@@ -123,6 +121,10 @@ class DiffusionEffect:
                 model_name = 'sdxl-turbo'
             else:
                 model_name = 'sd-turbo'
+
+        # Guard: skip if already loaded with this model
+        if self.pipe is not None and self.model_name == model_name:
+            return
 
         sys.stderr.write(f'kornia-server: loading diffusion model {model_name}...\n')
         sys.stderr.flush()
