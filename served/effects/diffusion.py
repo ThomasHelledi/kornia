@@ -65,6 +65,26 @@ ENV_PROMPTS = {
     'eye': 'extreme close-up of human eye, iris detail, macro photography, reflections, 8k',
     'eye-pulse': 'pulsating eye with dilating pupil, hypnotic, psychedelic colors, macro',
     'eye-bloom': 'eye with light bloom and lens flare, dreamy, soft focus, cinematic',
+
+    # City / Earth / Satellite environments — real-world map tile renders
+    'earth': 'cyberpunk city at night seen from high altitude, dark map with glowing neon street grids, '
+             'electric blue and amber city lights, noir atmosphere, aerial photography, cinematic, 8k',
+    'earth-satellite': 'cinematic satellite photography of earth surface, golden hour sunlight raking across terrain, '
+                       'hyper-detailed topography, atmospheric haze layers, IMAX documentary style, 8k',
+    'earth-close': 'cinematic low-altitude city flyover, detailed rooftops and architecture, volumetric fog between buildings, '
+                   'warm street lights glowing, depth of field, drone photography, ultra detailed, 8k',
+    'aalborg': 'cinematic aerial view of Aalborg Denmark at twilight, Limfjorden waterfront glowing, '
+               'Nordic architecture with warm amber lights, harbor cranes silhouetted, cold blue sky fading to orange, '
+               'Scandinavian noir atmosphere, drone photography, 8k',
+    'city-dark': 'dark city map from above at midnight, glowing street grid in electric blue and orange, '
+                 'noir cyberpunk atmosphere, isolated lights in darkness, tilt-shift miniature effect, cinematic, 8k',
+    'city-satellite': 'high-resolution satellite city photography, urban sprawl patterns, golden hour side-lighting, '
+                      'sharp building shadows, highways as light trails, cinematic aerial recon, 8k',
+    'ocean': 'cinematic deep ocean surface from above, dark reflective water with subtle caustic light patterns, '
+             'moonlight silver streaks, deep navy and teal gradients, calm and vast, IMAX nature documentary, 8k',
+    'landscape': 'cinematic aerial landscape photography, rolling hills and farmland, golden hour warm light, '
+                 'long dramatic shadows, patchwork fields, atmospheric perspective, mist in valleys, '
+                 'National Geographic style, 8k',
 }
 
 DEFAULT_PROMPT = 'cinematic high quality visualization, ultra detailed, 8k, volumetric lighting'
@@ -80,6 +100,11 @@ SECTION_MODIFIERS = {
     'outro': ', fading, peaceful, serene',
     'breakdown': ', minimal, sparse, dark',
     'build': ', building tension, rising energy',
+
+    # City flyover camera movements
+    'descent': ', camera descending through clouds into the city, parallax depth, revealing detail, dramatic reveal',
+    'orbit': ', slow orbital camera circling the city, rotating perspective, panoramic sweep, steady cinematic motion',
+    'swoop': ', low-altitude high-speed flyover, motion blur on edges, adrenaline, dynamic camera, aggressive angle',
 }
 
 
@@ -230,6 +255,40 @@ class DiffusionEffect:
         env = params.get('env', '')
         section = params.get('section', '')
         prompt = params.get('prompt', '')
+
+        # Auto-detect earth/city environment from tile params
+        # When the Go engine sends map tile renders, params will contain 'tiles'
+        if not env and 'tiles' in params:
+            tile_cfg = params['tiles'] if isinstance(params['tiles'], dict) else {}
+            tile_provider = tile_cfg.get('provider', '').lower()
+            tile_style = tile_cfg.get('style', '').lower()
+            zoom = int(tile_cfg.get('zoom', 10))
+            city = tile_cfg.get('city', '').lower()
+
+            # City-specific overrides
+            if city == 'aalborg':
+                env = 'aalborg'
+            # Provider/style detection
+            elif 'satellite' in tile_provider or 'satellite' in tile_style:
+                if zoom >= 15:
+                    env = 'earth-close'
+                elif 'ocean' in tile_style or 'water' in tile_style:
+                    env = 'ocean'
+                else:
+                    env = 'earth-satellite'
+            elif 'carto-dark' in tile_provider or 'dark' in tile_style:
+                if zoom >= 14:
+                    env = 'city-dark'
+                else:
+                    env = 'earth'
+            elif 'landscape' in tile_style or 'terrain' in tile_style:
+                env = 'landscape'
+            elif zoom >= 15:
+                env = 'earth-close'
+            elif zoom >= 10:
+                env = 'city-satellite'
+            else:
+                env = 'earth'
 
         if not prompt:
             prompt = ENV_PROMPTS.get(env, DEFAULT_PROMPT)
