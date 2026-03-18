@@ -25,6 +25,7 @@ EFFECT_PROJECTION = 0x0F
 EFFECT_COSMIC = 0x10
 EFFECT_WATERMARK_REMOVE = 0x11
 EFFECT_DIFFUSION = 0x12
+EFFECT_ATLAS_STYLE = 0x13
 
 
 class EffectRegistry:
@@ -104,6 +105,9 @@ class EffectRegistry:
         elif effect_id == EFFECT_DIFFUSION:
             from .diffusion import DiffusionEffect
             eff = DiffusionEffect(self.device)
+        elif effect_id == EFFECT_ATLAS_STYLE:
+            from .style_trainer import AtlasStyleEffect
+            eff = AtlasStyleEffect(self.device)
         elif effect_id == EFFECT_DREAM_SEQUENCE:
             # Chain: deepdream + edge_glow + color_grade
             from .deepdream import DeepDreamEffect
